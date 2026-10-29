@@ -1,0 +1,210 @@
+"%1 charges 0.00.","%1 charges 0.00."
+"%1 ignores shipment-level free shipping and charges %2; enable Free Shipping or set the rule to matching items only.","%1 ignores shipment-level free shipping and charges %2; enable Free Shipping or set the rule to matching items only."
+"%1 ignores shipment-level free shipping and charges %2; select Free Shipping or set the rule to matching items only.","%1 ignores shipment-level free shipping and charges %2; select Free Shipping or set the rule to matching items only."
+"%1 of %2 boxes ship free; %3 charges %4 for the rest.","%1 of %2 boxes ship free; %3 charges %4 for the rest."
+"%1 still charges %2 although free shipping is set: the stored rate (saved %3, quote updated %4) was collected before the rule applied. Re-select the shipping method to recollect rates.","%1 still charges %2 although free shipping is set: the stored rate (saved %3, quote updated %4) was collected before the rule applied. Re-select the shipping method to recollect rates."
+"%1 — %2","%1 — %2"
+"%1 — found: %2","%1 — found: %2"
+"%1 — no item matches: %2","%1 — no item matches: %2"
+"(stopped by rule #%1)","(stopped by rule #%1)"
+"A discount validator excludes the item.","A discount validator excludes the item."
+"A free-shipping rule applied, but core set no free-shipping flag; %1 charges %2.","A free-shipping rule applied, but core set no free-shipping flag; %1 charges %2."
+"A zero-rate tax rule applies: %1.","A zero-rate tax rule applies: %1."
+"Applied Taxes","Applied Taxes"
+"Applied cart rules differ: order %1, current %2.","Applied cart rules differ: order %1, current %2."
+"Based On","Based On"
+"Cart Price Rules","Cart Price Rules"
+"Conditions are not met.","Conditions are not met."
+"Conditions are not met: %1.","Conditions are not met: %1."
+"Core decided otherwise for rule ""%1"" on ""%2"" (explained: %3, core: %4) — a third-party plugin or observer may change discounts.","Core decided otherwise for rule ""%1"" on ""%2"" (explained: %3, core: %4) — a third-party plugin or observer may change discounts."
+"Coupon ""%1"" belongs to rule ID %2.","Coupon ""%1"" belongs to rule ID %2."
+"Coupon ""%1"" does not exist.","Coupon ""%1"" does not exist."
+"Coupon ""%1"" was created manually; the rule accepts only generated coupons.","Coupon ""%1"" was created manually; the rule accepts only generated coupons."
+"Coupon ""%1"" was generated; the rule accepts only its specific coupon.","Coupon ""%1"" was generated; the rule accepts only its specific coupon."
+"Coupon ""%1"" was used %2 of %3 times by this customer.","Coupon ""%1"" was used %2 of %3 times by this customer."
+"Coupon ""%1"" was used %2 of %3 times.","Coupon ""%1"" was used %2 of %3 times."
+"Customer Group","Customer Group"
+"Customer Tax Class","Customer Tax Class"
+"Customer group ID %1 is excluded from website ID %2.","Customer group ID %1 is excluded from website ID %2."
+"Discount applied to %1 of %2 units (""Maximum Qty Discount is Applied To"").","Discount applied to %1 of %2 units (""Maximum Qty Discount is Applied To"")."
+"Download JSON","Download JSON"
+"Enter either a quote ID or an order number.","Enter either a quote ID or an order number."
+"Explain Another","Explain Another"
+"Explain Prices","Explain Prices"
+"Final %1 · item price %2","Final %1 · item price %2"
+"Free Shipping","Free Shipping"
+"Free shipping is not effective: %1","Free shipping is not effective: %1"
+"If %1 %2 %3 for a subselection of items in cart matching %4 of these conditions:","If %1 %2 %3 for a subselection of items in cart matching %4 of these conditions:"
+"If an item is %1 in the cart with %2 of these conditions true:","If an item is %1 in the cart with %2 of these conditions true:"
+"Include cart price rules of other websites","Include cart price rules of other websites"
+"Item %1: core price %2 differs from the computed final price %3; a third-party observer or plugin may change the final price.","Item %1: core price %2 differs from the computed final price %3; a third-party observer or plugin may change the final price."
+"Item %1: indexed final price %2 differs from the computed price %3; listings show the indexed price. Indexers: %4.","Item %1: indexed final price %2 differs from the computed price %3; listings show the indexed price. Indexers: %4."
+"Item %1: no price index row for product %2 in %3; listings may hide or misprice it. Indexers: %4.","Item %1: no price index row for product %2 in %3; listings may hide or misprice it. Indexers: %4."
+"Item Prices (base currency)","Item Prices (base currency)"
+"Item qty %1 is below the discount step %2 (""%3"").","Item qty %1 is below the discount step %2 (""%3"")."
+"Multishipping quote: cart rules and tax are explained for the first shipping address only.","Multishipping quote: cart rules and tax are explained for the first shipping address only."
+"No cart price rules.","No cart price rules."
+"No changes (%1 collectors)","No changes (%1 collectors)"
+"No collectors traced.","No collectors traced."
+"No country to look up tax rates for.","No country to look up tax rates for."
+"No explanation available for %1.","No explanation available for %1."
+"No items.","No items."
+"No shipping charge.","No shipping charge."
+"No shipping method is selected yet.","No shipping method is selected yet."
+"%1 is selected but has no stored rate; re-select the shipping method to collect rates.","%1 is selected but has no stored rate; re-select the shipping method to collect rates."
+"No shipping tax class is configured (%1).","No shipping tax class is configured (%1)."
+"No tax information.","No tax information."
+"No tax rate matches %1 for product class ""%2"" and customer class ""%3"".","No tax rate matches %1 for product class ""%2"" and customer class ""%3""."
+"No","No"
+"Not applied to any item, see the items.","Not applied to any item, see the items."
+"Only one price explanation can run per request.","Only one price explanation can run per request."
+"Order ""%1"" does not exist.","Order ""%1"" does not exist."
+"Order ""%1"" has no quote to explain.","Order ""%1"" has no quote to explain."
+"Order ""%1"" is evaluated with current rules and prices, not the ones valid when it was placed.","Order ""%1"" is evaluated with current rules and prices, not the ones valid when it was placed."
+"Order Number","Order Number"
+"Order number ""%1"" exists in several stores; open the order and explain it from there.","Order number ""%1"" exists in several stores; open the order and explain it from there."
+"Price explanation token rejected: %1.","Price explanation token rejected: %1."
+"Quote ID","Quote ID"
+"Quote or Order","Quote or Order"
+"Quote with ID ""%1"" does not exist.","Quote with ID ""%1"" does not exist."
+"Rates / Reason","Rates / Reason"
+"Rule ""%1"": the condition breakdown says %2, but the rule validation says %3.","Rule ""%1"": the condition breakdown says %2, but the rule validation says %3."
+"Rule %1 applied earlier with ""Discard subsequent rules"".","Rule %1 applied earlier with ""Discard subsequent rules""."
+"Shipping Discount","Shipping Discount"
+"Show all collectors (%1 without changes)","Show all collectors (%1 without changes)"
+"Sort Order","Sort Order"
+"Store View","Store View"
+"Tax Class","Tax Class"
+"Tax rates apply but the taxable amount is zero.","Tax rates apply but the taxable amount is zero."
+"Tax rates match (%1) but core applied none.","Tax rates match (%1) but core applied none."
+"The customer group has no tax class.","The customer group has no tax class."
+"The customer used the rule %1 of %2 times.","The customer used the rule %1 of %2 times."
+"The item does not match the ""Apply to"" conditions.","The item does not match the ""Apply to"" conditions."
+"The item has the ""no discount"" flag.","The item has the ""no discount"" flag."
+"The product tax class is ""None"".","The product tax class is ""None""."
+"The quote %1 of order ""%2"" no longer exists, so the order cannot be explained.","The quote %1 of order ""%2"" no longer exists, so the order cannot be explained."
+"The quote has no items.","The quote has no items."
+"The rule ended on %1; today is %2.","The rule ended on %1; today is %2."
+"The rule is inactive.","The rule is inactive."
+"The rule is not assigned to customer group ID %1.","The rule is not assigned to customer group ID %1."
+"The rule is not assigned to website ID %1.","The rule is not assigned to website ID %1."
+"The rule requires a coupon; the quote has none.","The rule requires a coupon; the quote has none."
+"The rule starts on %1; today is %2.","The rule starts on %1; today is %2."
+"Third-party carrier %1 charges %2 although free shipping is set; it decides on its own whether to honour the flag.","Third-party carrier %1 charges %2 although free shipping is set; it decides on its own whether to honour the flag."
+"Totals Collectors","Totals Collectors"
+"Totals differ between the order and the current recollection: %1.","Totals differ between the order and the current recollection: %1."
+"Totals were collected in the ""%1"" area: storefront-only observers and plugins did not run. Run dmlab:price:explain for the storefront result.","Totals were collected in the ""%1"" area: storefront-only observers and plugins did not run. Run dmlab:price:explain for the storefront result."
+"Yes","Yes"
+"applied %1","applied %1"
+"custom price %1","custom price %1"
+"discards subsequent rules","discards subsequent rules"
+"expected %1, actual %2","expected %1, actual %2"
+"not applied","not applied"
+"region %1","region %1"
+"suspects: %1","suspects: %1"
+"unexplained delta %1","unexplained delta %1"
+Actions,Actions
+Address,Address
+Algorithm,Algorithm
+Changes,Changes
+Class,Class
+Code,Code
+Conditions,Conditions
+Coupon,Coupon
+Currency,Currency
+Customer,Customer
+Details,Details
+Discount,Discount
+Explain,Explain
+Guest,Guest
+ID,ID
+Layer,Layer
+Line,Line
+No,No
+None.,None.
+Order,Order
+Priority,Priority
+Quote,Quote
+Reason,Reason
+Rule,Rule
+Stage,Stage
+State,State
+Status,Status
+Summary,Summary
+Tax,Tax
+Third-Party,Third-Party
+Value,Value
+Warnings,Warnings
+Website,Website
+Yes,Yes
+missing,missing
+none,none
+"Address flag","Address flag"
+"Carrier honours","Carrier honours"
+"Free Shipping carrier","Free Shipping carrier"
+"Free boxes","Free boxes"
+"Free items","Free items"
+"Granted by","Granted by"
+"Method","Method"
+"Order #%1","Order #%1"
+"Price Explanation: %1","Price Explanation: %1"
+"Quote #%1","Quote #%1"
+"Running the explanation on the storefront…","Running the explanation on the storefront…"
+"Stored rate (base currency)","Stored rate (base currency)"
+"The report could not be built: %1","The report could not be built: %1"
+"The storefront run failed: %1. Showing the admin-area result instead; see Warnings.","The storefront run failed: %1. Showing the admin-area result instead; see Warnings."
+Totals,Totals
+Total,Total
+Current,Current
+Base Current,Base Current
+Ordered,Ordered
+Base Ordered,Base Ordered
+Subtotal,Subtotal
+Shipping,Shipping
+Grand Total,Grand Total
+"Effective","Effective"
+"Not honoured by the carrier","Not honoured by the carrier"
+"Partially effective","Partially effective"
+"Stale shipping rate","Stale shipping rate"
+"Unknown carrier","Unknown carrier"
+"Not granted","Not granted"
+"No shipping method","No shipping method"
+"Item flags only","Item flags only"
+"Free item quantity","Free item quantity"
+"Unknown","Unknown"
+"For matching items only","For matching items only"
+"For shipment with matching items","For shipment with matching items"
+"Base price","Base price"
+"Special price","Special price"
+"Tier price","Tier price"
+"Catalog price rule","Catalog price rule"
+"Custom options","Custom options"
+"Won","Won"
+"Active","Active"
+"Inactive","Inactive"
+"Applied","Applied"
+"Rejected","Rejected"
+"Not a candidate","Not a candidate"
+"Customer group","Customer group"
+"Date range","Date range"
+"Rule inactive","Rule inactive"
+"Coupon usage limit","Coupon usage limit"
+"Uses per customer","Uses per customer"
+"Discount step","Discount step"
+"Maximum qty discount","Maximum qty discount"
+"Discarded by an earlier rule","Discarded by an earlier rule"
+"Item excluded","Item excluded"
+"Catalog prices include tax","Catalog prices include tax"
+"Shipping prices include tax","Shipping prices include tax"
+"Tax applied after discount","Tax applied after discount"
+"Discount applied on prices including tax","Discount applied on prices including tax"
+"Cross border trade","Cross border trade"
+"Shipping address","Shipping address"
+"Billing address","Billing address"
+"Shipping origin","Shipping origin"
+"Unit price","Unit price"
+"Row total","Row total"
+"Enabled","Enabled"
+"Disabled","Disabled"
+"free shipping (%1)","free shipping (%1)"
+"Fallback address","Fallback address"

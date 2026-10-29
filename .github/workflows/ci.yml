@@ -1,0 +1,161 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - run: composer validate
+
+      - name: Well-formed XML
+        run: |
+          find . -name '*.xml' -not -path './vendor/*' -print0 | xargs -0 php -r '
+            foreach (array_slice($argv, 1) as $file) {
+                if (!(new DOMDocument())->load($file)) { fwrite(STDERR, "Malformed XML: $file\n"); exit(1); }
+            }' --
+
+      - name: Magento coding standard
+        run: |
+          composer create-project -q --no-interaction --no-progress magento/magento-coding-standard "$RUNNER_TEMP/mcs"
+          "$RUNNER_TEMP/mcs/vendor/bin/phpcs" --standard=Magento2 --extensions=php,phtml \
+            --ignore='*/vendor/*' --runtime-set ignore_warnings_on_exit 1 .
+
+  test:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: bcmath, gd, intl, soap, sodium, xsl, zip
+          coverage: ${{ matrix.php == '8.4' && 'pcov' || 'none' }}
+
+      # Magento packages come from the public Mage-OS mirror: no repo.magento.com keys needed.
+      - name: Configure Magento packages
+        run: |
+          composer config repositories.mage-os composer https://mirror.mage-os.org/
+          composer config --no-plugins allow-plugins.magento/magento-composer-installer false
+          composer config --no-plugins allow-plugins.magento/composer-dependency-version-audit-plugin false
+
+      - uses: ramsey/composer-install@v4
+
+      - name: PHPUnit
+        run: vendor/bin/phpunit -c Test/Unit/phpunit.xml ${{ matrix.php == '8.4' && '--coverage-clover coverage.xml' || '' }}
+
+      - uses: codecov/codecov-action@v7
+        if: matrix.php == '8.4'
+        with:
+          files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  integration:
+    name: Integration (Magento 2.4.9)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: magento_integration_tests
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -proot"
+          --health-interval 5s --health-timeout 5s --health-retries 30
+      opensearch:
+        image: opensearchproject/opensearch:3
+        env:
+          discovery.type: single-node
+          OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+          DISABLE_SECURITY_PLUGIN: 'true'
+          DISABLE_INSTALL_DEMO_CONFIG: 'true'
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd "curl -sf http://localhost:9200/_cluster/health"
+          --health-interval 10s --health-timeout 5s --health-retries 30
+    defaults:
+      run:
+        working-directory: magento
+    steps:
+      # The integration phpunit.xml expects the module at <magento>/m2-modules/module-price-explain.
+      - uses: actions/checkout@v7
+        with:
+          path: magento/m2-modules/module-price-explain
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, ftp, gd, intl, pdo_mysql, soap, sockets, sodium, xsl, zip
+          coverage: none
+
+      - name: Create Magento project
+        run: |
+          composer create-project -q --no-install --no-interaction --repository-url=https://mirror.mage-os.org/ \
+            magento/project-community-edition:2.4.9 "$RUNNER_TEMP/project"
+          cp -a "$RUNNER_TEMP/project/." .
+          composer config repositories.price-explain path m2-modules/module-price-explain
+          composer require --no-update dmlab/module-price-explain:@dev
+
+      - id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-magento-2.4.9-${{ hashFiles('magento/composer.json') }}
+          restore-keys: composer-magento-2.4.9-
+
+      - run: composer install --no-interaction --no-progress
+
+      - name: Install config
+        run: |
+          cat > dev/tests/integration/etc/install-config-mysql.php <<'PHP'
+          <?php
+          return [
+              'db-host' => '127.0.0.1',
+              'db-user' => 'root',
+              'db-password' => 'root',
+              'db-name' => 'magento_integration_tests',
+              'backend-frontname' => 'backend',
+              'search-engine' => 'opensearch',
+              'opensearch-host' => '127.0.0.1',
+              'opensearch-port' => 9200,
+              'admin-user' => \Magento\TestFramework\Bootstrap::ADMIN_NAME,
+              'admin-password' => \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD,
+              'admin-email' => \Magento\TestFramework\Bootstrap::ADMIN_EMAIL,
+              'admin-firstname' => \Magento\TestFramework\Bootstrap::ADMIN_FIRSTNAME,
+              'admin-lastname' => \Magento\TestFramework\Bootstrap::ADMIN_LASTNAME,
+              'disable-modules' => 'Magento_TwoFactorAuth',
+              'consumers-wait-for-messages' => '0',
+          ];
+          PHP
+
+      - name: PHPUnit integration
+        working-directory: magento/dev/tests/integration
+        run: php ../../../vendor/bin/phpunit -c ../../../m2-modules/module-price-explain/Test/Integration/phpunit.xml

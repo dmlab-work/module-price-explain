@@ -1,0 +1,37 @@
+<?php
+/**
+ * Copyright © DMLab. All rights reserved.
+ * Licensed under the Open Software License version 3.0 (OSL-3.0). See LICENSE.
+ */
+
+/** @var \Magento\Backend\Block\Template $block */
+/** @var \Magento\Framework\Escaper $escaper */
+$token = (string)$block->getData('token');
+if ($token === '') {
+    return;
+}
+$init = json_encode([
+    'DmLab_PriceExplain/js/report' => [
+        'endpointUrl' => (string)$block->getData('endpoint_url'),
+        'token' => $token,
+        'fallbackUrl' => (string)$block->getData('fallback_url'),
+        'fileName' => (string)$block->getData('file_name'),
+        'orderViewUrl' => (string)$block->getData('order_view_url'),
+    ],
+], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+?>
+<div class="dmlab-pe-report" data-mage-init="<?= $escaper->escapeHtmlAttr($init) ?>">
+    <div class="page-actions-buttons">
+        <a class="action-secondary"
+           href="<?= $escaper->escapeUrl($block->getUrl('dmlab_price_explain/report/index')) ?>">
+            <?= $escaper->escapeHtml(__('Explain Another')) ?>
+        </a>
+        <button type="button" class="action-primary" data-role="download" disabled>
+            <?= $escaper->escapeHtml(__('Download JSON')) ?>
+        </button>
+    </div>
+    <div data-role="status" class="message message-notice">
+        <?= $escaper->escapeHtml(__('Running the explanation on the storefront…')) ?>
+    </div>
+    <div data-role="sections"></div>
+</div>

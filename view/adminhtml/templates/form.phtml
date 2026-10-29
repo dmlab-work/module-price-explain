@@ -1,0 +1,45 @@
+<?php
+/**
+ * Copyright © DMLab. All rights reserved.
+ * Licensed under the Open Software License version 3.0 (OSL-3.0). See LICENSE.
+ */
+
+/** @var \Magento\Backend\Block\Template $block */
+/** @var \Magento\Framework\Escaper $escaper */
+?>
+<form class="dmlab-pe-form" method="get"
+      action="<?= $escaper->escapeUrl($block->getUrl('dmlab_price_explain/report/view')) ?>">
+    <fieldset class="admin__fieldset">
+        <legend class="admin__legend"><span><?= $escaper->escapeHtml(__('Quote or Order')) ?></span></legend>
+        <p><?= $escaper->escapeHtml(__('Enter either a quote ID or an order number.')) ?></p>
+        <div class="admin__field">
+            <label class="admin__field-label" for="dmlab-pe-quote-id">
+                <span><?= $escaper->escapeHtml(__('Quote ID')) ?></span>
+            </label>
+            <div class="admin__field-control">
+                <input class="admin__control-text" type="text" id="dmlab-pe-quote-id" name="quote_id"/>
+            </div>
+        </div>
+        <div class="admin__field">
+            <label class="admin__field-label" for="dmlab-pe-increment-id">
+                <span><?= $escaper->escapeHtml(__('Order Number')) ?></span>
+            </label>
+            <div class="admin__field-control">
+                <input class="admin__control-text" type="text" id="dmlab-pe-increment-id" name="increment_id"/>
+            </div>
+        </div>
+        <div class="admin__field admin__field-option">
+            <input class="admin__control-checkbox" type="checkbox" id="dmlab-pe-all-rules" name="all_rules" value="1"/>
+            <label class="admin__field-label" for="dmlab-pe-all-rules">
+                <span><?= $escaper->escapeHtml(__('Include cart price rules of other websites')) ?></span>
+            </label>
+        </div>
+        <div class="admin__field">
+            <div class="admin__field-control">
+                <button type="submit" class="action-primary">
+                    <span><?= $escaper->escapeHtml(__('Explain')) ?></span>
+                </button>
+            </div>
+        </div>
+    </fieldset>
+</form>

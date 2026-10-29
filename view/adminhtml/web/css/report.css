@@ -1,0 +1,32 @@
+/**
+ * Copyright © DMLab. All rights reserved.
+ * Licensed under the Open Software License version 3.0 (OSL-3.0). See LICENSE.
+ */
+.dmlab-pe-report .admin__page-section { margin-bottom: 3rem; }
+.dmlab-pe-report .data-grid { margin-bottom: 1.5rem; }
+.dmlab-pe-report .dmlab-pe-won { font-weight: 600; }
+.dmlab-pe-report .dmlab-pe-pass { color: #185b00; }
+.dmlab-pe-report .dmlab-pe-fail { color: #e22626; }
+.dmlab-pe-report .dmlab-pe-skip { color: #808080; }
+.dmlab-pe-report .dmlab-pe-toggle:not(:checked) ~ .data-grid .dmlab-pe-unchanged,
+.dmlab-pe-report .dmlab-pe-toggle:checked ~ .data-grid .dmlab-pe-collapsed { display: none; }
+.dmlab-pe-report .dmlab-pe-toggle + label { display: inline-block; margin-bottom: 1rem; }
+.dmlab-pe-report .dmlab-pe-child { padding-left: 1.5em; }
+.dmlab-pe-report details > summary { display: block; list-style: none; cursor: pointer; }
+.dmlab-pe-report details > summary::-webkit-details-marker { display: none; }
+.dmlab-pe-report .dmlab-pe-summary { color: #007bdb; }
+.dmlab-pe-report summary:hover .dmlab-pe-summary { text-decoration: underline; }
+.dmlab-pe-report .dmlab-pe-summary::before { content: '\25B8\00a0'; }
+.dmlab-pe-report details[open] > summary .dmlab-pe-summary::before { content: '\25BE\00a0'; }
+.dmlab-pe-report .dmlab-pe-tree { list-style: none; margin: .5rem 0 0; padding: 0; }
+.dmlab-pe-report .dmlab-pe-tree .dmlab-pe-detail { color: #666; }
+.dmlab-pe-report .dmlab-pe-depth-1 { padding-left: 1.5em; }
+.dmlab-pe-report .dmlab-pe-depth-2 { padding-left: 3em; }
+.dmlab-pe-report .dmlab-pe-depth-3 { padding-left: 4.5em; }
+.dmlab-pe-report .dmlab-pe-depth-4 { padding-left: 6em; }
+.dmlab-pe-report .dmlab-pe-depth-5 { padding-left: 7.5em; }
+.dmlab-pe-report .dmlab-pe-depth-6 { padding-left: 9em; }
+.dmlab-pe-report .dmlab-pe-depth-7 { padding-left: 10.5em; }
+.dmlab-pe-report .dmlab-pe-depth-8 { padding-left: 12em; }
+.dmlab-pe-report .dmlab-pe-depth-9 { padding-left: 13.5em; }
+.dmlab-pe-report [data-role="status"] { margin-bottom: 2rem; }

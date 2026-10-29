@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © DMLab. All rights reserved.
+ * Licensed under the Open Software License version 3.0 (OSL-3.0). See LICENSE.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="DmLab\PriceExplain\Api\ExplainerInterface" type="DmLab\PriceExplain\Model\Explainer"/>
+    <type name="Magento\Framework\Console\CommandListInterface">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="dmlab_price_explain" xsi:type="object">DmLab\PriceExplain\Console\Command\ExplainCommand</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="DmLab\PriceExplain\Console\Command\ExplainCommand">
+        <arguments>
+            <argument name="explainer" xsi:type="object">DmLab\PriceExplain\Api\ExplainerInterface\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="Magento\Quote\Model\Quote\Address\Total\AbstractTotal">
+        <plugin name="dmlab_price_explain_trace_collector" type="DmLab\PriceExplain\Plugin\Quote\TraceCollectorPlugin"/>
+    </type>
+    <type name="Magento\Rule\Model\Condition\AbstractCondition">
+        <plugin name="dmlab_price_explain_capture_validated_value"
+                type="DmLab\PriceExplain\Plugin\Rule\CaptureValidatedValuePlugin"/>
+    </type>
+</config>

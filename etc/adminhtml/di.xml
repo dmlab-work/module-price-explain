@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © DMLab. All rights reserved.
+ * Licensed under the Open Software License version 3.0 (OSL-3.0). See LICENSE.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Sales\Block\Adminhtml\Order\View">
+        <plugin name="dmlab_price_explain_order_view_button"
+                type="DmLab\PriceExplain\Plugin\Sales\OrderViewExplainButtonPlugin"/>
+    </type>
+    <type name="Magento\Customer\Block\Adminhtml\Edit\Tab\Cart">
+        <plugin name="dmlab_price_explain_cart_link" type="DmLab\PriceExplain\Plugin\Customer\CartExplainLinkPlugin"/>
+    </type>
+</config>
