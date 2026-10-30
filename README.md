@@ -4,12 +4,23 @@
 
 [![CI](https://github.com/dmlab-work/module-price-explain/actions/workflows/ci.yml/badge.svg)](https://github.com/dmlab-work/module-price-explain/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/dmlab-work/module-price-explain/graph/badge.svg)](https://codecov.io/gh/dmlab-work/module-price-explain) [![Packagist Version](https://img.shields.io/packagist/v/dmlab/module-price-explain)](https://packagist.org/packages/dmlab/module-price-explain) [![Downloads](https://img.shields.io/packagist/dt/dmlab/module-price-explain)](https://packagist.org/packages/dmlab/module-price-explain) [![PHP](https://img.shields.io/packagist/dependency-v/dmlab/module-price-explain/php)](https://packagist.org/packages/dmlab/module-price-explain) [![License](https://img.shields.io/packagist/l/dmlab/module-price-explain)](LICENSE) ![Magento](https://img.shields.io/badge/Magento-2.4-orange)
 
+"Why didn't my coupon apply?" "Why is shipping charged when the rule says free?" Magento shows the price, never
+the reason. Price Explain answers in one admin report: which price won, which cart rules applied or failed and on
+which condition, whether free shipping really reaches the customer, and where tax comes from.
+
 ![Price explanation report](.github/images/report.png)
 
-## The problem
-"Why didn't my coupon apply?" "Why is shipping charged when the rule says free?" Magento shows the result, never
-the reason. Answering means checking special, tier and catalog rule prices, every cart rule's conditions, stacking
-flags, carrier semantics and tax settings by hand — or stepping through `collectTotals()` in a debugger.
+## Install
+```bash
+composer require dmlab/module-price-explain
+bin/magento module:enable DmLab_PriceExplain
+bin/magento setup:upgrade
+```
+
+## Requirements
+Magento 2.4.7+ · PHP 8.2–8.5
+
+Pairs with the other free DMLab modules: https://github.com/dmlab-work
 
 ## What it explains
 One read-only report per quote, or per order via its quote:
@@ -22,19 +33,10 @@ One read-only report per quote, or per order via its quote:
 - **Cart price rules** — applied (amount per item) or rejected with the stage and reason: website, group, dates,
   coupon, usage limits, the failing condition with expected vs actual value (category and option names, not IDs),
   "Apply to" actions, discount step, or discarded by an earlier rule. Configurable children fold under the parent
-  (`MP01 → MP01-32-Black`).
+  (`MP01 → MP01-32-Black`). Verdicts follow the installed core: before 2.4.8 a rule below its discount step
+  applies with zero discount.
 - **Free shipping** — whether a granted free shipping actually reaches the customer (see below).
 - **Tax** — tax classes, the address used, rates per item and shipping, algorithm and flags; "no tax" has a reason.
-
-Numbers come from a real `collectTotals()` on an isolated quote; reasons from an independent evaluator. When the
-two disagree (a plugin changed the result), the report says so.
-
-## Install
-```bash
-composer require dmlab/module-price-explain
-bin/magento setup:upgrade
-```
-Magento 2.4.9+, PHP 8.3–8.5.
 
 ## Usage
 - **Marketing → Promotions → Explain Prices** — a quote ID or an order number.
@@ -82,16 +84,8 @@ are; Table Rate counts flagged units; Free Shipping honours the address flag.
 
 Anything but `effective` (or `no_method` with nothing selected) adds a `free_shipping_not_effective` warning.
 
-### Storefront run
-The admin page runs the explanation on the **storefront** of the quote's store, so frontend-only observers and
-plugins run as at checkout. The page gets a token and POSTs it to `dmlab_price_explain/report/json`:
-HMAC-SHA256 over `crypt/key`, valid 60 s, single use, checked against the store, sent in the body only;
-responses are `no-store`. If the call fails, the page falls back to an admin-area run with the `area` warning.
-
 ## Safety
-Nothing is written: the quote is loaded outside the repository, totals are collected in a transaction that is
-always rolled back, stored shipping rates are reused (no carrier calls). Outside an explanation the plugins cost
-one flag check.
+Nothing is written and no carrier is called. Outside an explanation the module costs one flag check.
 
 ## Limitations
 - Orders are explained with today's rules and prices; differences from the placed order are reported as warnings.
@@ -104,7 +98,18 @@ one flag check.
 
 ## Tests
 Unit: `vendor/bin/phpunit -c Test/Unit/phpunit.xml`. Integration (real fixtures; nothing written, verdicts match
-core): [Test/Integration/README.md](Test/Integration/README.md). CI runs both on Magento 2.4.9.
+core): [Test/Integration/README.md](Test/Integration/README.md). CI runs unit tests on PHP 8.2–8.5 and integration
+tests on Magento 2.4.7 and 2.4.9.
+
+## Architecture
+Numbers come from a real `collectTotals()` on an isolated quote; reasons from an independent evaluator. When the
+two disagree (a plugin changed the result), the report says so. The quote is loaded outside the repository, totals
+are collected in a transaction that is always rolled back, and stored shipping rates are reused.
+
+The admin page runs the explanation on the **storefront** of the quote's store, so frontend-only observers and
+plugins run as at checkout. The page gets a token and POSTs it to `dmlab_price_explain/report/json`:
+HMAC-SHA256 over `crypt/key`, valid 60 s, single use, checked against the store, sent in the body only;
+responses are `no-store`. If the call fails, the page falls back to an admin-area run with the `area` warning.
 
 ## License
 [OSL-3.0](LICENSE)

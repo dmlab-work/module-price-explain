@@ -24,6 +24,8 @@ docker exec -w /var/www/html/dev/tests/integration magento-app \
   php ../../../vendor/bin/phpunit -c /var/www/html/m2-modules/module-price-explain/Test/Integration/phpunit.xml
 ```
 
+Magento 2.4.7 ships PHPUnit 9 and needs MySQL 8.0 / OpenSearch 2: use `phpunit9.xml` there.
+
 ## Fixtures
 
 `_files/*.php` (each with a `_rollback.php`), applied with `#[DataFixture('DmLab_PriceExplain::Test/Integration/_files/…')]`.

@@ -21,7 +21,7 @@ class PackagingTest extends TestCase
         $composer = json_decode((string)file_get_contents($this->root() . '/composer.json'), true);
         self::assertIsArray($composer);
         self::assertSame('dmlab/module-price-explain', $composer['name']);
-        self::assertSame('0.0.1', $composer['version']);
+        self::assertSame('0.0.2', $composer['version']);
         self::assertSame('OSL-3.0', $composer['license']);
 
         $require = $composer['require'];
@@ -30,6 +30,22 @@ class PackagingTest extends TestCase
             $prefix = $package === 'php' ? '~' : '^';
             self::assertStringStartsWith($prefix, $constraint, $package);
         }
+    }
+
+    public function testComposerSupportsMagento247AndPhp82AndHasMetadata(): void
+    {
+        $composer = json_decode((string)file_get_contents($this->root() . '/composer.json'), true);
+        self::assertIsArray($composer);
+        self::assertSame('~8.2.0||~8.3.0||~8.4.0||~8.5.0', $composer['require']['php']);
+        self::assertSame('^103.0.7', $composer['require']['magento/framework']);
+        self::assertSame('^6.4||^7.4', $composer['require']['symfony/console']);
+        self::assertSame('^11.5||^12.5', $composer['require-dev']['phpunit/phpunit']);
+
+        $repo = 'https://github.com/dmlab-work/module-price-explain';
+        self::assertSame($repo, $composer['homepage']);
+        self::assertSame($repo . '/issues', $composer['support']['issues']);
+        self::assertSame($repo, $composer['support']['source']);
+        self::assertArrayNotHasKey('suggest', $composer);
     }
 
     public function testModuleSequenceMatchesTheUsedMagentoModules(): void
@@ -98,13 +114,71 @@ class PackagingTest extends TestCase
         $jobs = $this->ciJobs();
         self::assertArrayHasKey('lint', $jobs);
         self::assertArrayHasKey('integration', $jobs);
-        self::assertStringContainsString('Test/Integration/phpunit.xml', $jobs['integration']);
-        self::assertStringContainsString('image: mysql:8.4', $jobs['integration']);
-        self::assertStringContainsString('image: opensearchproject/opensearch', $jobs['integration']);
+        self::assertStringContainsString('Test/Integration/${{ matrix.phpunit }}', $jobs['integration']);
+        self::assertStringContainsString('image: mysql:${{ matrix.mysql }}', $jobs['integration']);
+        self::assertStringContainsString(
+            'image: opensearchproject/opensearch:${{ matrix.opensearch }}',
+            $jobs['integration']
+        );
+        self::assertStringContainsString('fail-fast: false', $jobs['integration']);
+        self::assertStringContainsString(
+            "- { magento: '2.4.7', php: '8.3', mysql: '8.0', opensearch: '2', phpunit: phpunit9.xml }",
+            $jobs['integration']
+        );
+        self::assertStringContainsString(
+            "- { magento: '2.4.9', php: '8.5', mysql: '8.4', opensearch: '3', phpunit: phpunit.xml }",
+            $jobs['integration']
+        );
+        self::assertStringContainsString(
+            'magento/project-community-edition:${{ matrix.magento }}',
+            $jobs['integration']
+        );
+        self::assertStringContainsString('php-version: ${{ matrix.php }}', $jobs['integration']);
         self::assertStringNotContainsString('continue-on-error', $jobs['integration']);
+        $this->assertPrecedes('composer config audit.block-insecure false', 'composer install', $jobs['integration']);
+        self::assertStringContainsString(
+            "- if: matrix.magento == '2.4.7'\n        run: composer config audit.block-insecure false",
+            $jobs['integration']
+        );
+        self::assertStringContainsString("php: ['8.2', '8.3', '8.4', '8.5']", $jobs['test']);
         self::assertStringContainsString('-c Test/Unit/phpunit.xml', $jobs['test']);
         self::assertStringContainsString('--coverage-clover coverage.xml', $jobs['test']);
         self::assertStringContainsString('codecov/codecov-action', $jobs['test']);
+    }
+
+    public function testCiInstallsDoNotNotifyPackagist(): void
+    {
+        $jobs = $this->ciJobs();
+        $notify = 'composer config notify-on-install false';
+        $this->assertPrecedes($notify, 'ramsey/composer-install', $jobs['test']);
+        $this->assertPrecedes('magento/project-community-edition', $notify, $jobs['integration']);
+        $this->assertPrecedes($notify, 'composer install', $jobs['integration']);
+    }
+
+    public function testIntegrationConfigsExistForBothPhpunitGenerations(): void
+    {
+        $dir = $this->root() . '/Test/Integration/';
+        $modern = (string)file_get_contents($dir . 'phpunit.xml');
+        $legacy = (string)file_get_contents($dir . 'phpunit9.xml');
+        self::assertStringContainsString('<bootstrap class="Magento\TestFramework\Event\Subscribers"/>', $modern);
+        self::assertStringNotContainsString('<listeners>', $modern);
+        self::assertStringContainsString('<listener class="Magento\TestFramework\Event\PhpUnit"/>', $legacy);
+        self::assertStringNotContainsString('<extensions>', $legacy);
+        self::assertStringNotContainsString('cacheDirectory=', $legacy);
+
+        $modernXml = simplexml_load_string($modern);
+        $legacyXml = simplexml_load_string($legacy);
+        self::assertNotFalse($modernXml);
+        self::assertNotFalse($legacyXml);
+        self::assertSame((string)$modernXml['bootstrap'], (string)$legacyXml['bootstrap']);
+        foreach (['testsuites', 'php'] as $section) {
+            $strip = static fn (string $xml): string => (string)preg_replace('/<!--.*?-->\s*/s', '', $xml);
+            self::assertSame(
+                $strip((string)$modernXml->{$section}->asXML()),
+                $strip((string)$legacyXml->{$section}->asXML()),
+                "<$section> must match in phpunit.xml and phpunit9.xml"
+            );
+        }
     }
 
     public function testSourceHasNoWritePathForTheExplainedQuote(): void
@@ -272,6 +346,15 @@ class PackagingTest extends TestCase
     private function root(): string
     {
         return dirname(__DIR__, 2);
+    }
+
+    private function assertPrecedes(string $first, string $then, string $haystack): void
+    {
+        $firstAt = strpos($haystack, $first);
+        $thenAt = strpos($haystack, $then);
+        self::assertNotFalse($firstAt, $first);
+        self::assertNotFalse($thenAt, $then);
+        self::assertLessThan($thenAt, $firstAt, "'$first' must come before '$then'");
     }
 
     /**

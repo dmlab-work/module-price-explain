@@ -35,11 +35,13 @@ class ConditionWalker
      * @param Tracer $tracer
      * @param ValueLabels $valueLabels
      * @param ItemLabel $itemLabel
+     * @param SalesRuleVersion $salesRuleVersion
      */
     public function __construct(
         private readonly Tracer $tracer,
         private readonly ValueLabels $valueLabels,
-        private readonly ItemLabel $itemLabel
+        private readonly ItemLabel $itemLabel,
+        private readonly SalesRuleVersion $salesRuleVersion
     ) {
     }
 
@@ -54,7 +56,9 @@ class ConditionWalker
     {
         $this->tracer->beginCapture();
         // Same totals swap as Utility::canProcessRule: item-restricted rules see eligible items only.
-        $saved = $this->hasItemRestrictions($rule) ? $this->swapEligibleTotals($rule, $address) : null;
+        $saved = $this->salesRuleVersion->countsEligibleItemsOnly() && $this->hasItemRestrictions($rule)
+            ? $this->swapEligibleTotals($rule, $address)
+            : null;
         try {
             $tree = $this->walkNode($rule->getConditions(), $address, '1');
             $valid = (bool)$rule->validate($address);

@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © DMLab. All rights reserved.
+ * Licensed under the Open Software License version 3.0 (OSL-3.0). See LICENSE.
+ */
+-->
+<!-- PHPUnit 9 (Magento 2.4.7) variant of phpunit.xml: the test framework hooks in as a listener there. -->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd"
+         bootstrap="../../../../dev/tests/integration/framework/bootstrap.php"
+         colors="true"
+         columns="max"
+         beStrictAboutTestsThatDoNotTestAnything="false"
+         cacheResultFile=".phpunit.cache/test-results"
+         stderr="true">
+    <testsuites>
+        <testsuite name="DmLab_PriceExplain integration">
+            <directory suffix="Test.php">.</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <includePath>.</includePath>
+        <includePath>testsuite</includePath>
+        <ini name="date.timezone" value="America/Los_Angeles"/>
+        <ini name="memory_limit" value="-1"/>
+        <const name="TESTS_INSTALL_CONFIG_FILE" value="etc/install-config-mysql.php"/>
+        <const name="TESTS_POST_INSTALL_SETUP_COMMAND_CONFIG_FILE" value="etc/post-install-setup-command-config.php"/>
+        <const name="TESTS_GLOBAL_CONFIG_FILE" value="etc/config-global.php"/>
+        <const name="TESTS_GLOBAL_CONFIG_DIR" value="../../../app/etc"/>
+        <const name="TESTS_CLEANUP" value="disabled"/>
+        <const name="TESTS_MEM_LEAK_LIMIT" value=""/>
+        <const name="TESTS_EXTRA_VERBOSE_LOG" value="1"/>
+        <const name="TESTS_MAGENTO_MODE" value="developer"/>
+        <const name="TESTS_ERROR_LOG_LISTENER_LEVEL" value="-1"/>
+        <const name="USE_OVERRIDE_CONFIG" value="enabled"/>
+    </php>
+    <listeners>
+        <listener class="Magento\TestFramework\Event\PhpUnit"/>
+    </listeners>
+</phpunit>

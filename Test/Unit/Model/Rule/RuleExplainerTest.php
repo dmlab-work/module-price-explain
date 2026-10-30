@@ -21,6 +21,7 @@ use DmLab\PriceExplain\Model\Rule\ConditionsResult;
 use DmLab\PriceExplain\Model\Rule\ConditionWalker;
 use DmLab\PriceExplain\Model\Rule\RuleExplainer;
 use DmLab\PriceExplain\Model\Rule\RulesExplanation;
+use DmLab\PriceExplain\Model\Rule\SalesRuleVersion;
 use DmLab\PriceExplain\Model\Rule\ValueLabels;
 use Magento\Catalog\Model\ResourceModel\Category\Collection as CategoryCollection;
 use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
@@ -60,6 +61,11 @@ class RuleExplainerTest extends TestCase
      * @var bool
      */
     private bool $childrenValidation = true;
+
+    /**
+     * @var string magento/module-sales-rule version the explainer follows
+     */
+    private string $salesRule = '101.2.9';
 
     /**
      * @var array<int, true> object IDs of the items built by item(); any other item is a clone
@@ -109,6 +115,18 @@ class RuleExplainerTest extends TestCase
 
         self::assertSame([1 => 100.0, 2 => 90.0, 3 => 85.0], $this->seenSubtotals);
         self::assertSame(85.0, $quote->getShippingAddress()->getData('base_subtotal_with_discount'));
+    }
+
+    public function testConditionsSeeUndiscountedSubtotalBefore249(): void
+    {
+        $this->salesRule = '101.2.8';
+        $items = [$this->item(11, 'A', ['applied_rule_ids' => '1,2'], [1 => 10.0, 2 => 5.0])];
+        $quote = $this->quote($items, false, [], ['base_subtotal' => 100.0]);
+        $candidates = array_map(fn (int $id): Candidate => new Candidate($this->rule($id, [])), [1, 2, 3]);
+
+        $this->explainer($this->walker())->explain($quote, $candidates);
+
+        self::assertSame([1 => 100.0, 2 => 100.0, 3 => 100.0], $this->seenSubtotals);
     }
 
     public function testCartFixedConditionsSeeFullSubtotalOnSavedAddress(): void
@@ -178,6 +196,66 @@ class RuleExplainerTest extends TestCase
         self::assertSame($applies ? null : Stage::DISCOUNT_STEP, $outcome->getStage());
         self::assertSame($applies ? Status::APPLIED : Status::REJECTED, $result->getVerdicts()[0]->getStatus());
         self::assertSame([], $result->getWarnings());
+    }
+
+    /**
+     * @param string $action
+     * @param float $step
+     * @param float $qty
+     * @param bool $applies whether 2.4.8+ applies the rule
+     */
+    #[DataProvider('discountStepProvider')]
+    public function testDiscountStepIsOnlyNotedBefore248(string $action, float $step, float $qty, bool $applies): void
+    {
+        $this->salesRule = '101.2.7';
+        $rule = $this->rule(1, ['simple_action' => $action, 'discount_step' => $step]);
+        $items = [$this->item(11, 'A', ['qty' => $qty, 'applied_rule_ids' => '1'])];
+
+        $outcome = $this->explain($items, [new Candidate($rule)])->getVerdicts()[0]->getItems()[0];
+
+        self::assertTrue($outcome->isApplied());
+        self::assertSame($applies ? null : Stage::DISCOUNT_STEP, $outcome->getStage());
+    }
+
+    public function testDiscountStepBelowQtyIsAppliedWithZeroDiscountBefore248(): void
+    {
+        $this->salesRule = '101.2.7';
+        $stopper = $this->rule(1, ['discount_step' => 3, 'stop_rules_processing' => 1]);
+        $items = [$this->item(11, 'A', ['qty' => 2, 'applied_rule_ids' => '1'])];
+
+        $result = $this->explain($items, [new Candidate($stopper), new Candidate($this->rule(2, []))]);
+        [$first, $second] = $result->getVerdicts();
+        $outcome = $first->getItems()[0];
+
+        self::assertTrue($outcome->isApplied());
+        self::assertSame(Stage::DISCOUNT_STEP, $outcome->getStage());
+        self::assertSame(
+            'Item qty 2 is below the discount step 3 ("by_percent"). Core applies the rule with zero discount.',
+            $outcome->getReason()
+        );
+        self::assertSame(0.0, $outcome->getAmount());
+        self::assertSame(Status::APPLIED, $first->getStatus());
+        self::assertSame(Stage::STOPPED_BY, $second->getItems()[0]->getStage());
+        self::assertSame([], $result->getWarnings());
+    }
+
+    public function testDiscountStepBefore248YieldsToActionsAndOutranksDiscountQty(): void
+    {
+        $this->salesRule = '101.2.7';
+        $mismatch = $this->rule(1, ['discount_step' => 3]);
+        $limited = $this->rule(2, ['discount_step' => 3, 'discount_qty' => 1]);
+        $this->actions[1] = [11 => false];
+        $items = [$this->item(11, 'A', ['qty' => 2, 'applied_rule_ids' => '2'])];
+
+        [$first, $second] = $this->explain($items, [new Candidate($mismatch), new Candidate($limited)])
+            ->getVerdicts();
+
+        $state = fn (RuleVerdict $verdict): array => [
+            $verdict->getItems()[0]->isApplied(),
+            $verdict->getItems()[0]->getStage(),
+        ];
+        self::assertSame([false, Stage::ACTIONS], $state($first));
+        self::assertSame([true, Stage::DISCOUNT_STEP], $state($second));
     }
 
     public function testDiscountQtyLimitIsNotedOnAppliedItem(): void
@@ -288,6 +366,65 @@ class RuleExplainerTest extends TestCase
 
         self::assertTrue($outcome->isApplied());
         self::assertSame([], $outcome->getChildren());
+    }
+
+    public function testDynamicBundleChildrenAreDiscountedFirstBefore248(): void
+    {
+        $this->salesRule = '101.2.7';
+        $bundle = $this->item(20, 'BNDL', ['applied_rule_ids' => '1', 'product' => $this->product('BNDL', 0)]);
+        $this->item(21, 'A', [], [1 => 4.0], $bundle);
+        $this->item(22, 'B', [], [], $bundle);
+        $this->actions[1] = [0 => true, 21 => true, 22 => false];
+
+        $outcome = $this->explain([$bundle], [new Candidate($this->rule(1, []))])->getVerdicts()[0]->getItems()[0];
+
+        self::assertSame(
+            [['BNDL → A', true, -4.0], ['BNDL → B', false, null]],
+            array_map(
+                fn (RuleItemOutcome $o) => [$o->getLabel(), $o->isApplied(), $o->getAmount()],
+                $outcome->getChildren()
+            )
+        );
+
+        $this->actions[1] = [0 => true, 21 => false, 22 => false];
+        $outcome = $this->explain([$bundle], [new Candidate($this->rule(1, []))])->getVerdicts()[0]->getItems()[0];
+
+        self::assertTrue($outcome->isApplied());
+        self::assertSame([], $outcome->getChildren());
+    }
+
+    public function testDiscountStepIsNotedPerDiscountedChildBefore248(): void
+    {
+        $this->salesRule = '101.2.7';
+        $bundle = $this->item(20, 'BNDL', ['applied_rule_ids' => '1', 'product' => $this->product('BNDL', 0)]);
+        $this->item(21, 'A', ['qty' => 4], [1 => 3.0], $bundle);
+        $this->item(22, 'B', ['qty' => 2], [], $bundle);
+        $rule = $this->rule(1, ['discount_step' => 3]);
+
+        $outcome = $this->explain([$bundle], [new Candidate($rule)])->getVerdicts()[0]->getItems()[0];
+
+        self::assertSame([true, null, null], [$outcome->isApplied(), $outcome->getStage(), $outcome->getReason()]);
+        self::assertSame(
+            [
+                ['BNDL → A', null, null, -3.0],
+                [
+                    'BNDL → B',
+                    Stage::DISCOUNT_STEP,
+                    'Item qty 2 is below the discount step 3 ("by_percent"). Core applies the rule with zero discount.',
+                    0.0,
+                ],
+            ],
+            array_map(
+                fn (RuleItemOutcome $o) => [$o->getLabel(), $o->getStage(), $o->getReason(), $o->getAmount()],
+                $outcome->getChildren()
+            )
+        );
+
+        $this->actions[1] = [0 => true, 21 => false, 22 => false];
+        $outcome = $this->explain([$bundle], [new Candidate($rule)])->getVerdicts()[0]->getItems()[0];
+
+        self::assertSame([], $outcome->getChildren());
+        self::assertSame(Stage::DISCOUNT_STEP, $outcome->getStage());
     }
 
     public function testFixedBundleIsNotCalculatedPerChild(): void
@@ -639,13 +776,13 @@ class RuleExplainerTest extends TestCase
         );
         $locator = $this->createStub(ChildrenValidationLocator::class);
         $locator->method('isChildrenValidationRequired')->willReturnCallback(fn (): bool => $this->childrenValidation);
-
         return new RuleExplainer(
             $walker,
             $validator,
             $locator,
             new ItemLabel(),
-            new CategoryLabels($categories ?? $this->createStub(CategoryCollectionFactory::class), new ValueLabels())
+            new CategoryLabels($categories ?? $this->createStub(CategoryCollectionFactory::class), new ValueLabels()),
+            new SalesRuleVersion($this->salesRule)
         );
     }
 
@@ -748,7 +885,13 @@ class RuleExplainerTest extends TestCase
             $ruleDiscounts[] = $this->discount($ruleId, $amount, DiscountAppliedToInterface::APPLIED_TO_ITEM);
         }
         $item->method('getExtensionAttributes')->willReturn(new DataObject(['discounts' => $ruleDiscounts]));
-        $item->setData($data + ['id' => $id, 'item_id' => $id, 'sku' => $sku, 'qty' => 1]);
+        $item->setData($data + [
+            'id' => $id,
+            'item_id' => $id,
+            'sku' => $sku,
+            'qty' => 1,
+            'product' => $this->product($sku),
+        ]);
         $item->setParentItem($parent);
         $this->built[spl_object_id($item)] = true;
 
@@ -773,10 +916,10 @@ class RuleExplainerTest extends TestCase
      */
     private function discount(int $ruleId, float $amount, string $appliedTo): RuleDiscountInterface
     {
-        $data = self::getStubBuilder(DiscountData::class)
+        $data = $this->getMockBuilder(DiscountData::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['getAmount', 'getBaseAmount', 'getAppliedTo'])
-            ->getStub();
+            ->getMock();
         $data->method('getAmount')->willReturn($amount);
         $data->method('getBaseAmount')->willReturn($amount);
         $data->method('getAppliedTo')->willReturn($appliedTo);

@@ -24,10 +24,12 @@ use Magento\SalesRule\Model\Rule;
 use Magento\SalesRule\Model\Rule\Customer as RuleCustomer;
 use Magento\SalesRule\Model\Rule\CustomerFactory as RuleCustomerFactory;
 use Magento\Store\Model\Store;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 
+#[AllowMockObjectsWithoutExpectations]
 class CandidateFilterTest extends TestCase
 {
     private const WEBSITE = 1;
@@ -273,10 +275,10 @@ class CandidateFilterTest extends TestCase
      */
     private function rule(int $id, array $data): Stub
     {
-        $rule = self::getStubBuilder(Rule::class)
+        $rule = $this->getMockBuilder(Rule::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['getId'])
-            ->getStub();
+            ->getMock();
         $rule->method('getId')->willReturn($id);
         $rule->setData($data + [
             'rule_id' => $id,
@@ -295,15 +297,15 @@ class CandidateFilterTest extends TestCase
      */
     private function quote(?int $customerId): Stub
     {
-        $store = self::getStubBuilder(Store::class)
+        $store = $this->getMockBuilder(Store::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['getWebsiteId'])
-            ->getStub();
+            ->getMock();
         $store->method('getWebsiteId')->willReturn(self::WEBSITE);
-        $quote = self::getStubBuilder(Quote::class)
+        $quote = $this->getMockBuilder(Quote::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['getStore', 'getStoreId'])
-            ->getStub();
+            ->getMock();
         $quote->method('getStore')->willReturn($store);
         $quote->method('getStoreId')->willReturn(self::STORE);
         $quote->setData(['customer_group_id' => self::GROUP, 'customer_id' => $customerId]);
@@ -364,10 +366,10 @@ class CandidateFilterTest extends TestCase
      */
     private function coupon(): Stub
     {
-        $coupon = self::getStubBuilder(Coupon::class)
+        $coupon = $this->getMockBuilder(Coupon::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['loadByCode', 'getId'])
-            ->getStub();
+            ->getMock();
         $coupon->method('loadByCode')->willReturnCallback(function (string $code) use ($coupon) {
             $this->couponLoads++;
             $coupon->setData($this->coupons[$code] ?? []);
@@ -382,10 +384,10 @@ class CandidateFilterTest extends TestCase
      */
     private function ruleCustomer(): Stub
     {
-        $ruleCustomer = self::getStubBuilder(RuleCustomer::class)
+        $ruleCustomer = $this->getMockBuilder(RuleCustomer::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['loadByCustomerRule', 'getId'])
-            ->getStub();
+            ->getMock();
         $ruleCustomer->method('loadByCustomerRule')->willReturnCallback(
             function ($customerId, $ruleId) use ($ruleCustomer) {
                 $this->usageLoads++;

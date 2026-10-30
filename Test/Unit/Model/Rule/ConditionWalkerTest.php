@@ -10,6 +10,7 @@ namespace DmLab\PriceExplain\Test\Unit\Model\Rule;
 use DmLab\PriceExplain\Model\Quote\ItemLabel;
 use DmLab\PriceExplain\Model\Report\ConditionNode;
 use DmLab\PriceExplain\Model\Rule\ConditionWalker;
+use DmLab\PriceExplain\Model\Rule\SalesRuleVersion;
 use DmLab\PriceExplain\Model\Rule\ValueLabels;
 use DmLab\PriceExplain\Model\Trace\Tracer;
 use DmLab\PriceExplain\Plugin\Rule\CaptureValidatedValuePlugin;
@@ -568,6 +569,24 @@ class ConditionWalkerTest extends TestCase
         self::assertSame(2, $address->getTotalQty());
     }
 
+    public function testItemRestrictedRuleSeesFullTotalsBefore249(): void
+    {
+        $items = [
+            $this->item(1, 'A', ['base_row_total' => 40, 'qty' => 1]),
+            $this->item(2, 'B', ['base_row_total' => 60, 'qty' => 1]),
+        ];
+        $address = $this->address(['base_subtotal' => 100, 'total_qty' => 2], $items);
+        $rule = $this->rule(
+            $this->combine('all', true, [$this->addressLeaf('base_subtotal', '>=', '50')]),
+            $this->productCombine('all', true, [$this->productLeaf('sku', '==', 'A')])
+        );
+
+        $result = $this->walker('101.2.8')->walkConditions($rule, $address);
+
+        self::assertTrue($result->isValid());
+        self::assertEquals(100, $result->getTree()->getChildren()[0]->getActual());
+    }
+
     public function testEligibleTotalsSkipConfigurableChildrenCalculatedBundleAndNoDiscountItems(): void
     {
         $parent = $this->item(10, 'CONF');
@@ -716,9 +735,14 @@ class ConditionWalkerTest extends TestCase
         return [$bundle, ...$children];
     }
 
-    private function walker(): ConditionWalker
+    private function walker(?string $salesRuleVersion = null): ConditionWalker
     {
-        return new ConditionWalker($this->tracer, new ValueLabels(), new ItemLabel());
+        return new ConditionWalker(
+            $this->tracer,
+            new ValueLabels(),
+            new ItemLabel(),
+            new SalesRuleVersion($salesRuleVersion ?? '101.2.9')
+        );
     }
 
     /**

@@ -38,13 +38,15 @@ class RuleExplainer
      * @param ChildrenValidationLocator $childrenValidationLocator
      * @param ItemLabel $itemLabel
      * @param CategoryLabels $categoryLabels
+     * @param SalesRuleVersion $salesRuleVersion
      */
     public function __construct(
         private readonly ConditionWalker $walker,
         private readonly Validator $validator,
         private readonly ChildrenValidationLocator $childrenValidationLocator,
         private readonly ItemLabel $itemLabel,
-        private readonly CategoryLabels $categoryLabels
+        private readonly CategoryLabels $categoryLabels,
+        private readonly SalesRuleVersion $salesRuleVersion
     ) {
     }
 
@@ -87,7 +89,8 @@ class RuleExplainer
 
             // Validator::initTotals validates cart_fixed rules before the rules loop and memoises the result
             // for a saved address, so they see the undiscounted subtotal.
-            $conditions = $rule->getSimpleAction() === Rule::CART_FIXED_ACTION && $address->getId()
+            $conditions = !$this->salesRuleVersion->chainsSubtotal()
+                || ($rule->getSimpleAction() === Rule::CART_FIXED_ACTION && $address->getId())
                 ? $this->walkConditions($rule, $address, 0.0, 0.0)
                 : $this->walkConditions($rule, $address, $earlierBase, $earlier);
             $earlierBase += $itemDiscounts[(int)$rule->getId()][0] ?? 0.0;
@@ -199,9 +202,11 @@ class RuleExplainer
         if (!$this->validator->canApplyDiscount($item)) {
             return $this->rejectItem($item, Stage::ITEM_EXCLUDED, __('A discount validator excludes the item.'));
         }
-        $stepReason = $this->discountStepReason($rule, (float)$item->getQty());
-        if ($stepReason !== null) {
-            return $this->rejectItem($item, Stage::DISCOUNT_STEP, $stepReason);
+        if ($this->salesRuleVersion->skipsBelowDiscountStep()) {
+            $stepReason = $this->discountStepReason($rule, (float)$item->getQty());
+            if ($stepReason !== null) {
+                return $this->rejectItem($item, Stage::DISCOUNT_STEP, $stepReason);
+            }
         }
 
         $actions = $this->walkActions($rule, $item);
@@ -219,18 +224,9 @@ class RuleExplainer
             );
         }
 
-        $stage = null;
-        $reason = null;
-        $discountQty = (float)$rule->getDiscountQty();
-        $totalQty = (float)$item->getTotalQty();
-        if ($discountQty > 0 && $totalQty > $discountQty) {
-            $stage = Stage::DISCOUNT_QTY;
-            $reason = (string)__(
-                'Discount applied to %1 of %2 units ("Maximum Qty Discount is Applied To").',
-                (string)$discountQty,
-                (string)$totalQty
-            );
-        }
+        $children = $this->childOutcomes($rule, $item);
+        // Child rows carry the notes when core discounts the children instead of the parent.
+        [$stage, $reason] = $children === [] ? $this->appliedNote($rule, $item) : [null, null];
 
         return new RuleItemOutcome(
             $itemId,
@@ -242,14 +238,44 @@ class RuleExplainer
             null,
             $actions,
             $label,
-            $this->childOutcomes($rule, $item)
+            $children
         );
     }
 
     /**
-     * Per-child outcomes when RulesApplier::applyRule discounts children one by one: the parent is
-     * children-calculated (dynamic bundle) and does not match the actions itself; otherwise the parent
-     * discount is distributed and the children need no rows.
+     * Stage and reason of a discounted line, from the qty RulesApplier::getDiscountData discounts it with.
+     *
+     * @param Rule $rule
+     * @param AbstractItem $item
+     * @return array{0: string|null, 1: string|null}
+     */
+    private function appliedNote(Rule $rule, AbstractItem $item): array
+    {
+        $discountQty = (float)$rule->getDiscountQty();
+        $totalQty = (float)$item->getTotalQty();
+        $qty = $discountQty > 0 ? min($totalQty, $discountQty) : $totalQty;
+        $stepReason = $this->discountStepReason($rule, $qty);
+        if ($stepReason !== null) {
+            return [Stage::DISCOUNT_STEP, (string)__('%1 Core applies the rule with zero discount.', $stepReason)];
+        }
+        if ($discountQty > 0 && $totalQty > $discountQty) {
+            return [
+                Stage::DISCOUNT_QTY,
+                (string)__(
+                    'Discount applied to %1 of %2 units ("Maximum Qty Discount is Applied To").',
+                    (string)$discountQty,
+                    (string)$totalQty
+                ),
+            ];
+        }
+
+        return [null, null];
+    }
+
+    /**
+     * Per-child outcomes when RulesApplier::applyRule discounts children one by one (dynamic bundle):
+     * the parent does not match the actions itself, or on older cores any child matches; otherwise the
+     * parent discount is distributed and the children need no rows.
      *
      * @param Rule $rule
      * @param AbstractItem $item
@@ -261,21 +287,33 @@ class RuleExplainer
         if ($children === [] || !$this->itemLabel->isChildrenCalculated($item)) {
             return [];
         }
+        $parentFirst = $this->salesRuleVersion->discountsParentFirst();
         // Core validates a clone: no ID, no children.
-        if ($this->walker->walkActions($rule, clone $item)->getResult()) {
+        if ($parentFirst && $this->walker->walkActions($rule, clone $item)->getResult()) {
+            return [];
+        }
+
+        $trees = array_map(
+            fn (AbstractItem $child): ConditionNode => $this->walker->walkActions($rule, $child),
+            $children
+        );
+        if (!$parentFirst && !array_filter($trees, static fn (ConditionNode $tree): bool => $tree->getResult())) {
             return [];
         }
 
         $outcomes = [];
-        foreach ($children as $child) {
-            $actions = $this->walker->walkActions($rule, $child);
+        foreach ($children as $key => $child) {
+            $actions = $trees[$key];
             $applied = $actions->getResult();
+            [$stage, $reason] = $applied
+                ? $this->appliedNote($rule, $child)
+                : [Stage::ACTIONS, (string)__('The item does not match the "Apply to" conditions.')];
             $outcomes[] = new RuleItemOutcome(
                 (int)$child->getId(),
                 (string)$child->getSku(),
                 $applied,
-                $applied ? null : Stage::ACTIONS,
-                $applied ? null : (string)__('The item does not match the "Apply to" conditions.'),
+                $stage,
+                $reason,
                 $applied ? -$this->itemDiscount($child, (int)$rule->getId()) : null,
                 null,
                 $actions,
@@ -310,7 +348,7 @@ class RuleExplainer
     }
 
     /**
-     * Why discount_step skips the item, per action type as in Discount::collect.
+     * Why discount_step skips the item (Discount::collect) or zeroes its discount (fixQuantity), per action type.
      *
      * @param Rule $rule
      * @param float $qty

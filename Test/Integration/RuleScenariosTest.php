@@ -10,6 +10,7 @@ namespace DmLab\PriceExplain\Test\Integration;
 use DmLab\PriceExplain\Model\Report\Report;
 use DmLab\PriceExplain\Model\Report\Stage;
 use DmLab\PriceExplain\Model\Report\Status;
+use DmLab\PriceExplain\Model\Rule\SalesRuleVersion;
 use DmLab\PriceExplain\Model\Rule\RuleExplainer;
 use Magento\Framework\App\ResourceConnection;
 use Magento\TestFramework\Fixture\AppArea;
@@ -104,13 +105,18 @@ class RuleScenariosTest extends ScenarioTestCase
         $this->assertMatchesCore($report);
     }
 
-    public function testDiscountStepSkipsSmallerQty(): void
+    public function testDiscountStepBelowQty(): void
     {
         $report = $this->explain($this->createQuote([self::line('pe-tier', 2)]));
 
         $outcome = $this->outcome($this->rule($report, 'PE Step 3'), 'pe-tier');
-        self::assertFalse($outcome->isApplied());
+        // Before 2.4.8 core applies the rule with zero discount instead of skipping the item.
+        $skips = Bootstrap::getObjectManager()->get(SalesRuleVersion::class)->skipsBelowDiscountStep();
+        self::assertSame(!$skips, $outcome->isApplied());
         self::assertSame(Stage::DISCOUNT_STEP, $outcome->getStage());
+        if (!$skips) {
+            self::assertSame(0.0, $outcome->getAmount());
+        }
         $this->assertMatchesCore($report);
     }
 

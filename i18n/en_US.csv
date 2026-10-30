@@ -42,6 +42,7 @@
 "Item %1: no price index row for product %2 in %3; listings may hide or misprice it. Indexers: %4.","Item %1: no price index row for product %2 in %3; listings may hide or misprice it. Indexers: %4."
 "Item Prices (base currency)","Item Prices (base currency)"
 "Item qty %1 is below the discount step %2 (""%3"").","Item qty %1 is below the discount step %2 (""%3"")."
+"%1 Core applies the rule with zero discount.","%1 Core applies the rule with zero discount."
 "Multishipping quote: cart rules and tax are explained for the first shipping address only.","Multishipping quote: cart rules and tax are explained for the first shipping address only."
 "No cart price rules.","No cart price rules."
 "No changes (%1 collectors)","No changes (%1 collectors)"

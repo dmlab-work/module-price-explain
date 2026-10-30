@@ -70,9 +70,11 @@ class ItemLabelTest extends TestCase
      */
     private function item(string $sku, ?string $productSku, ?Item $parent = null, ?int $priceType = null): Item
     {
-        $item = $this->createPartialMock(Item::class, []);
+        $item = $this->createPartialMock(Item::class, $productSku === null ? ['getProduct'] : []);
         $item->setData('sku', $sku);
-        if ($productSku !== null) {
+        if ($productSku === null) {
+            $item->method('getProduct')->willReturn(null);
+        } else {
             $item->setData('product', new DataObject(['sku' => $productSku, 'price_type' => $priceType]));
         }
         $item->setParentItem($parent);
