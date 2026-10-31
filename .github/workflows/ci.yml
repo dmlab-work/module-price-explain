@@ -78,14 +78,15 @@ jobs:
 
   integration:
     name: Integration (Magento ${{ matrix.magento }})
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
           # 2.4.7 ships PHPUnit 9, which needs the listener-based config.
-          - { magento: '2.4.7', php: '8.3', mysql: '8.0', opensearch: '2', phpunit: phpunit9.xml }
-          - { magento: '2.4.9', php: '8.5', mysql: '8.4', opensearch: '3', phpunit: phpunit.xml }
+          # libxml2 >= 2.13 rejects 2.4.7's esconfig.xsd, so 2.4.7 stays on ubuntu-24.04 (libxml2 2.9).
+          - { magento: '2.4.7', os: ubuntu-24.04, php: '8.3', mysql: '8.0', opensearch: '2', phpunit: phpunit9.xml }
+          - { magento: '2.4.9', os: ubuntu-latest, php: '8.5', mysql: '8.4', opensearch: '3', phpunit: phpunit.xml }
     services:
       mysql:
         image: mysql:${{ matrix.mysql }}

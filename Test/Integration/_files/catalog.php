@@ -14,11 +14,22 @@ use Magento\CatalogRule\Test\Fixture\Rule as CatalogRuleFixture;
 use Magento\ConfigurableProduct\Test\Fixture\Attribute as ConfigurableAttributeFixture;
 use Magento\ConfigurableProduct\Test\Fixture\Product as ConfigurableProductFixture;
 use Magento\Customer\Model\Group;
+use Magento\Framework\App\Config\MutableScopeConfigInterface;
+use Magento\Framework\Registry;
 use Magento\TestFramework\Fixture\DataFixtureFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
 $fixtures = $objectManager->get(DataFixtureFactory::class);
+
+// 2.4.7 dynamic category-product rewrites have no url_rewrite_id; a repeated apply then inserts NULL into the index.
+$config = $objectManager->get(MutableScopeConfigInterface::class);
+$objectManager->get(Registry::class)->register(
+    'pe_category_product_rewrites',
+    $config->getValue('catalog/seo/generate_category_product_rewrites'),
+    true
+);
+$config->setValue('catalog/seo/generate_category_product_rewrites', 1);
 
 $category = $fixtures->create(CategoryFixture::class)->apply(['name' => 'PE Sale', 'url_key' => 'pe-sale']);
 $saleCategory = [(int)$category->getId()];

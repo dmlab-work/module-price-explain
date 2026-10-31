@@ -10,6 +10,7 @@ use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
 use Magento\CatalogRule\Model\Indexer\IndexBuilder;
 use Magento\CatalogRule\Model\ResourceModel\Rule\CollectionFactory as CatalogRuleCollectionFactory;
+use Magento\Framework\App\Config\MutableScopeConfigInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Registry;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -39,6 +40,14 @@ foreach ($objectManager->get(CatalogRuleCollectionFactory::class)->create()
     $rule->delete();
 }
 $objectManager->get(IndexBuilder::class)->reindexFull();
+
+if ($registry->registry('pe_category_product_rewrites') !== null) {
+    $objectManager->get(MutableScopeConfigInterface::class)->setValue(
+        'catalog/seo/generate_category_product_rewrites',
+        $registry->registry('pe_category_product_rewrites')
+    );
+    $registry->unregister('pe_category_product_rewrites');
+}
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', false);

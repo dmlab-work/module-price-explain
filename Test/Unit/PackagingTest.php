@@ -21,7 +21,7 @@ class PackagingTest extends TestCase
         $composer = json_decode((string)file_get_contents($this->root() . '/composer.json'), true);
         self::assertIsArray($composer);
         self::assertSame('dmlab/module-price-explain', $composer['name']);
-        self::assertSame('0.0.2', $composer['version']);
+        self::assertSame('0.0.3', $composer['version']);
         self::assertSame('OSL-3.0', $composer['license']);
 
         $require = $composer['require'];
@@ -122,13 +122,18 @@ class PackagingTest extends TestCase
         );
         self::assertStringContainsString('fail-fast: false', $jobs['integration']);
         self::assertStringContainsString(
-            "- { magento: '2.4.7', php: '8.3', mysql: '8.0', opensearch: '2', phpunit: phpunit9.xml }",
+            "- { magento: '2.4.7', os: ubuntu-24.04, "
+                . "php: '8.3', mysql: '8.0', opensearch: '2', phpunit: phpunit9.xml }",
             $jobs['integration']
         );
         self::assertStringContainsString(
-            "- { magento: '2.4.9', php: '8.5', mysql: '8.4', opensearch: '3', phpunit: phpunit.xml }",
+            "- { magento: '2.4.9', os: ubuntu-latest, "
+                . "php: '8.5', mysql: '8.4', opensearch: '3', phpunit: phpunit.xml }",
             $jobs['integration']
         );
+        self::assertStringContainsString('runs-on: ${{ matrix.os }}', $jobs['integration']);
+        self::assertStringContainsString('runs-on: ubuntu-latest', $jobs['lint']);
+        self::assertStringContainsString('runs-on: ubuntu-latest', $jobs['test']);
         self::assertStringContainsString(
             'magento/project-community-edition:${{ matrix.magento }}',
             $jobs['integration']

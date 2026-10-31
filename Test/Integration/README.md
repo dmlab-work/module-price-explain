@@ -24,7 +24,8 @@ docker exec -w /var/www/html/dev/tests/integration magento-app \
   php ../../../vendor/bin/phpunit -c /var/www/html/m2-modules/module-price-explain/Test/Integration/phpunit.xml
 ```
 
-Magento 2.4.7 ships PHPUnit 9 and needs MySQL 8.0 / OpenSearch 2: use `phpunit9.xml` there.
+Magento 2.4.7 ships PHPUnit 9 and needs MySQL 8.0 / OpenSearch 2 and libxml2 < 2.13 (newer versions reject its
+`esconfig.xsd`): use `phpunit9.xml` there.
 
 ## Fixtures
 
@@ -33,7 +34,7 @@ Tests run with `DbIsolation(false)`: the explainer's own transaction rollback is
 
 | File | Creates |
 |---|---|
-| `catalog.php` | category `PE Sale` + 20% catalog rule; `pe-simple` $100, `pe-untaxed` $20 (tax class None), `pe-tier` $50 (qty 2: $35), `pe-special` $80 (special $60 from +10 days), configurable `pe-conf` (`pe_color` Red $30 / Blue $35) |
+| `catalog.php` | category `PE Sale` + 20% catalog rule; `pe-simple` $100, `pe-untaxed` $20 (tax class None), `pe-tier` $50 (qty 2: $35), `pe-special` $80 (special $60 from +10 days), configurable `pe-conf` (`pe_color` Red $30 / Blue $35); sets `catalog/seo/generate_category_product_rewrites` to 1 (restored on rollback) |
 | `cart_rules.php` | `PE Coupon once` (`PE_ONCE`, 1 use per customer), `PE Free shipping address` (`PE_FS_ADDR`), `PE Free shipping items` (`PE_FS_ITEMS`), `PE Subtotal 200+`, `PE Step 3` (`pe-tier`, `discount_step` 3), `PE Stop A` (`pe-simple`, stops processing), `PE Stop B`, `PE Found blue` (Found: SKU is `pe-conf-blue`) |
 | `tax_us_tx.php` | 8.25% rate + rule for US-TX |
 | `quote.php` | guest quote `pe_quote`: `pe-simple` ×1 + `pe-conf` Red ×1 to Austin, TX, Flat Rate (core default $5 per item) |

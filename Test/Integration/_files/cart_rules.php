@@ -8,6 +8,7 @@
 declare(strict_types=1);
 
 use Magento\SalesRule\Model\Rule;
+use Magento\SalesRule\Model\Rule\Condition\Address;
 use Magento\SalesRule\Model\Rule\Condition\Product;
 use Magento\SalesRule\Model\Rule\Condition\Product\Found;
 use Magento\SalesRule\Test\Fixture\Rule as RuleFixture;
@@ -15,7 +16,9 @@ use Magento\TestFramework\Fixture\DataFixtureFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 
 $fixtures = Bootstrap::getObjectManager()->get(DataFixtureFactory::class);
-$sku = static fn (string $value): array => [['attribute' => 'sku', 'operator' => '==', 'value' => $value]];
+$sku = static fn (string $value): array => [
+    ['type' => Product::class, 'attribute' => 'sku', 'operator' => '==', 'value' => $value],
+];
 
 $rules = [
     [
@@ -42,7 +45,9 @@ $rules = [
         'name' => 'PE Subtotal 200+',
         'discount_amount' => 10,
         'sort_order' => 20,
-        'conditions' => [['attribute' => 'base_subtotal', 'operator' => '>=', 'value' => 200]],
+        'conditions' => [
+            ['type' => Address::class, 'attribute' => 'base_subtotal', 'operator' => '>=', 'value' => 200],
+        ],
     ],
     [
         'name' => 'PE Step 3',

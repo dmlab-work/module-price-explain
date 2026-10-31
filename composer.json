@@ -22,7 +22,7 @@
         "issues": "https://github.com/dmlab-work/module-price-explain/issues",
         "source": "https://github.com/dmlab-work/module-price-explain"
     },
-    "version": "0.0.2",
+    "version": "0.0.3",
     "require": {
         "php": "~8.2.0||~8.3.0||~8.4.0||~8.5.0",
         "magento/framework": "^103.0.7",
