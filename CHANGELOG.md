@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.3
+- CI: the Magento 2.4.7 integration job runs on Ubuntu 24.04 (newer libxml2 rejects 2.4.7's `esconfig.xsd`).
+- Integration fixtures work with 2.4.7's cart rule fixture class and category-product URL rewrites.
+
 ## 0.0.2
 - Installs on Magento 2.4.7+ and PHP 8.2–8.5 (`magento/framework ^103.0.7`, Magento modules at their 2.4.7 versions, `symfony/console ^6.4||^7.4`).
 - Rule verdicts follow the installed core: before 2.4.8 a rule whose discount step exceeds the item qty is reported as applied with zero discount, and dynamic-bundle children are discounted before the parent; before 2.4.9 every rule's conditions see the undiscounted subtotal of the whole cart, including rules with "Apply to" actions.
